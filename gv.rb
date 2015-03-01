@@ -8,7 +8,7 @@ filedir = File::dirname(filepath)
 # FilePath
 Dir::chdir(filedir)
 wd = Dir::getwd
-files = Dir::entries(wd).select { |x| 
+files = Dir::entries(wd).sort.select { |x| 
 	/^\.(bmp|png|gif|jpg|jpeg)/ =~ File::extname(x).downcase
 }
 index = files.index(filename)
