@@ -50,8 +50,8 @@ window.signal_connect("destroy") do |w, e|
 	puts "destroy event"
 	Gtk.main_quit
 end
-window.add(image)
 
+window.add(image)
 window.show_all
 
 Gtk.main
