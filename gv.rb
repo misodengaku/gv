@@ -49,17 +49,22 @@ class Gv
     p file_name
     @pixbuf = Gdk::Pixbuf.new(file_name)
     @org_pix = @pixbuf.dup
+    if @rotate != 0
+      pixbuf_rotate(@rotate, false)
+    end
     pixbuf_draw(isFirst)
     @window.title = "#{file_name} - #{@index + 1} / #{@files.count}"
   end
 
-  def pixbuf_rotate(angle)
+  def pixbuf_rotate(angle, isDraw = true)
     puts "angle: #{angle}"
     @pixbuf = @org_pix.dup
     for i in 1..angle do
       @pixbuf = @pixbuf.rotate(Gdk::Pixbuf::ROTATE_CLOCKWISE)
     end
-    pixbuf_draw()
+    if isDraw
+      pixbuf_draw()
+    end
   end
 
   def pixbuf_draw(size = nil)
