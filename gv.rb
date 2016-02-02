@@ -2,6 +2,9 @@
 
 require 'gtk2'
 
+SLIDE_WAIT = 1 # 秒
+
+
 
 class Gv
 
@@ -29,12 +32,10 @@ class Gv
     @files = Dir::entries(file_dir).sort.select { |x|
       /^\.(bmp|png|gif|jpg|jpeg)/ =~ File::extname(x).downcase
     }
-    p @files
     @index = 0
     if !isDir
       @index = @files.index(file_name)
     end
-    p @index
 
     # Gtk
     Gtk.init
@@ -53,13 +54,22 @@ class Gv
       Gtk.main_quit
     end
 
+    if isDir
+      puts "Slideshow mode"
+      toggle_fullscreen()
+
+      GLib::Timeout.add(1000 * SLIDE_WAIT) do
+        next_image(1, true)
+      end
+    end
+
+
     show_image(@files[@index], true)
 
 
     @window.add(@image)
     @window.show_all
     Gtk.main
-
   end
 
   def show_image(file_name, isFirst = nil)
@@ -163,23 +173,38 @@ class Gv
     @image.set(@pixbuf)
   end
 
+  def toggle_fullscreen()
+    if !@isFullscreen
+      @window.fullscreen
+      @isFullscreen = true
+    else
+      @window.unfullscreen
+      @isFullscreen = false
+    end
+  end
+
+  def next_image(count = 1, isLoop = false)
+    if @files.count > @index + count
+      @index = @index + count
+    else
+      if isLoop
+        @index = 0
+      else
+        @index = @files.count - 1
+      end
+    end
+    show_image(@files[@index])
+  end
+
   def key_event(e)
     key = Gdk::Keyval.to_name(e.keyval)
     p key
     case key
       when 'Right'
         if Gdk::Window::ModifierType::CONTROL_MASK == e.state & Gdk::Window::CONTROL_MASK
-          if @files.count > @index + 10
-            @index = @index + 10
-          else
-            @index = @files.count - 1
-          end
-          show_image(@files[@index])
+          next_image(10)
         else
-          if @files.count > @index + 1
-            @index = @index + 1
-            show_image(@files[@index])
-          end
+          next_image()
         end
       when 'Left'
         if Gdk::Window::ModifierType::CONTROL_MASK == e.state & Gdk::Window::CONTROL_MASK
@@ -213,13 +238,7 @@ class Gv
 
       when 'Return'
         puts 'enter'
-        if !@isFullscreen
-          @window.fullscreen
-          @isFullscreen = true
-        else
-          @window.unfullscreen
-          @isFullscreen = false
-        end
+        toggle_fullscreen()
       when 'Escape'
         exit(0)
     end
@@ -230,8 +249,16 @@ end
 
 p ARGV[0]
 
-if ARGV[0] == '-d'
-  Gv.new(ARGV[1], true)
+# Slideshow mode
+if ARGV[0] == '-s'
+  gv = Gv.new(ARGV[1], true)
+  p "hoge"
+  loop do
+
+
+    sleep 1
+    #sleep SLIDE_WAIT
+  end
 else
   Gv.new(ARGV[0])
 end
