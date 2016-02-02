@@ -1,23 +1,40 @@
+#!/usr/bin/ruby
+
 require 'gtk2'
 
 
 class Gv
 
-  def initialize(argv)
-    file_path = File::expand_path(argv)
-    file_name = File::basename(file_path)
-    file_dir = File::dirname(file_path)
+  def initialize(argv, isDir = false)
+
+    if isDir
+      file_dir = argv
+      file_path = Dir::entries(file_dir)[0]
+      file_name = File::basename(file_path)
+    else
+      file_path = File::expand_path(argv)
+      file_name = File::basename(file_path)
+      file_dir = File::dirname(file_path)
+
+    end
+
+
     @isFullscreen = false
     @rotate = 0
 
 
     # FilePath
     Dir::chdir(file_dir)
-    wd = Dir::getwd
-    @files = Dir::entries(wd).sort.select { |x|
+    # wd = Dir::getwd
+    @files = Dir::entries(file_dir).sort.select { |x|
       /^\.(bmp|png|gif|jpg|jpeg)/ =~ File::extname(x).downcase
     }
-    @index = @files.index(file_name)
+    p @files
+    @index = 0
+    if !isDir
+      @index = @files.index(file_name)
+    end
+    p @index
 
     # Gtk
     Gtk.init
@@ -75,14 +92,35 @@ class Gv
           puts 'resize require: width'
           scale = @window.size[0].to_f / @pixbuf.width
           puts "#{(@pixbuf.width * scale).to_i}x#{(@pixbuf.height * scale).to_i}"
-          @pixbuf = @pixbuf.scale((@pixbuf.width * scale).to_i, (@pixbuf.height * scale).to_i, Gdk::Pixbuf::INTERP_HYPER)
+          p scale
+          p @pixbuf.width * scale
+          p @pixbuf.height * scale
+          resized_width = (@pixbuf.width * scale).to_i
+          resized_height = (@pixbuf.height * scale).to_i
+          if resized_width < 1
+            resized_width = 1
+          end
+          if resized_height < 1
+            resized_height = 1
+          end
+
+          @pixbuf = @pixbuf.scale(resized_width, resized_height, Gdk::Pixbuf::INTERP_HYPER)
         end
       else
         if @window.size[1] < @pixbuf.height
           puts 'resize require: height'
           scale = @window.size[1].to_f / @pixbuf.height
           puts "#{(@pixbuf.width * scale).to_i}x#{(@pixbuf.height * scale).to_i}"
-          @pixbuf = @pixbuf.scale((@pixbuf.width * scale).to_i, (@pixbuf.height * scale).to_i, Gdk::Pixbuf::INTERP_HYPER)
+          resized_width = (@pixbuf.width * scale).to_i
+          resized_height = (@pixbuf.height * scale).to_i
+          if resized_width < 1
+            resized_width = 1
+          end
+          if resized_height < 1
+            resized_height = 1
+          end
+
+          @pixbuf = @pixbuf.scale(resized_width, resized_height, Gdk::Pixbuf::INTERP_HYPER)
         end
       end
       #@window.set_size_request(@pixbuf.width, @pixbuf.height)
@@ -92,14 +130,32 @@ class Gv
           puts 'resize require: width mode screen'
           scale = @screen.width.to_f / @pixbuf.width
           puts "#{(@pixbuf.width * scale).to_i}x#{(@pixbuf.height * scale).to_i}"
-          @pixbuf = @pixbuf.scale((@pixbuf.width * scale).to_i, (@pixbuf.height * scale).to_i, Gdk::Pixbuf::INTERP_HYPER)
+          resized_width = (@pixbuf.width * scale).to_i
+          resized_height = (@pixbuf.height * scale).to_i
+          if resized_width < 1
+            resized_width = 1
+          end
+          if resized_height < 1
+            resized_height = 1
+          end
+
+          @pixbuf = @pixbuf.scale(resized_width, resized_height, Gdk::Pixbuf::INTERP_HYPER)
         end
       else
         if @screen.height < @pixbuf.height
           puts 'resize require: height mode screen'
           scale = @screen.height.to_f / @pixbuf.height
           puts "#{(@pixbuf.width * scale).to_i}x#{(@pixbuf.height * scale).to_i}"
-          @pixbuf = @pixbuf.scale((@pixbuf.width * scale).to_i, (@pixbuf.height * scale).to_i, Gdk::Pixbuf::INTERP_HYPER)
+          resized_width = (@pixbuf.width * scale).to_i
+          resized_height = (@pixbuf.height * scale).to_i
+          if resized_width < 1
+            resized_width = 1
+          end
+          if resized_height < 1
+            resized_height = 1
+          end
+
+          @pixbuf = @pixbuf.scale(resized_width, resized_height, Gdk::Pixbuf::INTERP_HYPER)
         end
       end
 
@@ -171,5 +227,13 @@ class Gv
   end
 end
 
+
 p ARGV[0]
-Gv.new(ARGV[0])
+
+if ARGV[0] == '-d'
+  Gv.new(ARGV[1], true)
+else
+  Gv.new(ARGV[0])
+end
+
+
