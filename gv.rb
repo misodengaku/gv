@@ -1,10 +1,8 @@
 #!/usr/bin/ruby
 
 require 'gtk2'
-require 'objspace'
-ObjectSpace.trace_object_allocations_start
 
-SLIDE_WAIT = 1 # 秒
+SLIDE_WAIT = 5 # 秒
 
 
 class Gv
@@ -61,9 +59,6 @@ class Gv
 
       GLib::Timeout.add(1000 * SLIDE_WAIT) do
         next_image(1, true)
-        io=File.open("/tmp/my_dump", "w")
-        ObjectSpace.dump_all(output: io);
-        io.close
       end
     end
 
