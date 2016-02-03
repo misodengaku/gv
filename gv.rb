@@ -1,9 +1,10 @@
 #!/usr/bin/ruby
 
 require 'gtk2'
+require 'objspace'
+ObjectSpace.trace_object_allocations_start
 
 SLIDE_WAIT = 1 # 秒
-
 
 
 class Gv
@@ -56,10 +57,13 @@ class Gv
 
     if isDir
       puts "Slideshow mode"
-      toggle_fullscreen()
+      #toggle_fullscreen()
 
       GLib::Timeout.add(1000 * SLIDE_WAIT) do
         next_image(1, true)
+        io=File.open("/tmp/my_dump", "w")
+        ObjectSpace.dump_all(output: io);
+        io.close
       end
     end
 
@@ -75,17 +79,17 @@ class Gv
   def show_image(file_name, isFirst = nil)
     p file_name
     @pixbuf = Gdk::Pixbuf.new(file_name)
-    @org_pix = @pixbuf.dup
     if @rotate != 0
       pixbuf_rotate(@rotate, false)
     end
     pixbuf_draw(isFirst)
+    @pixbuf = nil
     @window.title = "#{file_name} - #{@index + 1} / #{@files.count}"
   end
 
   def pixbuf_rotate(angle, isDraw = true)
     puts "angle: #{angle}"
-    @pixbuf = @org_pix.dup
+    # @pixbuf = @org_pix.dup
     for i in 1..angle do
       @pixbuf = @pixbuf.rotate(Gdk::Pixbuf::ROTATE_CLOCKWISE)
     end
@@ -96,6 +100,7 @@ class Gv
 
   def pixbuf_draw(size = nil)
     puts "Screen: #{@screen.width}x#{@screen.height}"
+    puts "Image: #{@pixbuf.width}x#{@pixbuf.height}"
     if size.nil? & !@isFullscreen
       if @pixbuf.width > @pixbuf.height
         if @window.size[0] < @pixbuf.width
@@ -135,42 +140,32 @@ class Gv
       end
       #@window.set_size_request(@pixbuf.width, @pixbuf.height)
     else
-      if @pixbuf.width > @pixbuf.height
-        if @screen.width < @pixbuf.width
-          puts 'resize require: width mode screen'
-          scale = @screen.width.to_f / @pixbuf.width
-          puts "#{(@pixbuf.width * scale).to_i}x#{(@pixbuf.height * scale).to_i}"
-          resized_width = (@pixbuf.width * scale).to_i
-          resized_height = (@pixbuf.height * scale).to_i
-          if resized_width < 1
-            resized_width = 1
-          end
-          if resized_height < 1
-            resized_height = 1
-          end
-
-          @pixbuf = @pixbuf.scale(resized_width, resized_height, Gdk::Pixbuf::INTERP_HYPER)
-        end
-      else
-        if @screen.height < @pixbuf.height
-          puts 'resize require: height mode screen'
-          scale = @screen.height.to_f / @pixbuf.height
-          puts "#{(@pixbuf.width * scale).to_i}x#{(@pixbuf.height * scale).to_i}"
-          resized_width = (@pixbuf.width * scale).to_i
-          resized_height = (@pixbuf.height * scale).to_i
-          if resized_width < 1
-            resized_width = 1
-          end
-          if resized_height < 1
-            resized_height = 1
-          end
-
-          @pixbuf = @pixbuf.scale(resized_width, resized_height, Gdk::Pixbuf::INTERP_HYPER)
-        end
+      # fullscreen時
+      #if @pixbuf.width > @pixbuf.height
+      if @pixbuf.width > @screen.width
+        puts 'resize require: width mode screen'
+        scale = @screen.width.to_f / @pixbuf.width
       end
+      if @pixbuf.height > @screen.height
+        puts 'resize require: height mode screen'
+        scale = @screen.height.to_f / @pixbuf.height
+      end
+      puts "#{(@pixbuf.width * scale).to_i}x#{(@pixbuf.height * scale).to_i}"
+
+      resized_width = (@pixbuf.width * scale).to_i
+      resized_height = (@pixbuf.height * scale).to_i
+      if resized_width < 1
+        resized_width = 1
+      end
+      if resized_height < 1
+        resized_height = 1
+      end
+
+      @pixbuf = @pixbuf.scale(resized_width, resized_height, Gdk::Pixbuf::INTERP_HYPER)
 
     end
     @image.set(@pixbuf)
+    @pixbuf = nil
   end
 
   def toggle_fullscreen()
@@ -246,19 +241,11 @@ class Gv
   end
 end
 
-
 p ARGV[0]
 
 # Slideshow mode
 if ARGV[0] == '-s'
-  gv = Gv.new(ARGV[1], true)
-  p "hoge"
-  loop do
-
-
-    sleep 1
-    #sleep SLIDE_WAIT
-  end
+  Gv.new(ARGV[1], true)
 else
   Gv.new(ARGV[0])
 end
